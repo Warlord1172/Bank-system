@@ -19,7 +19,7 @@ def create_table(conn):
                         balance REAL NOT NULL);''')
     conn.commit()
 
-def register_user(conn, username, password):
+def register_user( username, password,conn):
     cursor = conn.cursor()
     cursor.execute('INSERT INTO users (username, password, balance) VALUES (?, ?, ?)', (username, password, 0))
     conn.commit()
@@ -81,7 +81,7 @@ def register_callback(sender, app_data,conn):
     confirm_password = dpg.get_value("reg_confirm_password_input")
     if password == confirm_password:
         try:
-            register_user(conn, username, password)
+            register_user( username, password,conn)
             dpg.set_value("reg_status", "Registered successfully.")
         except sqlite3.IntegrityError:
             dpg.set_value("reg_status", "Username already exists.")
@@ -104,23 +104,26 @@ def logout_callback(sender, app_data):
     dpg.show_item("login_window")
     dpg.set_value("user_id", "")
 
-def main():
-    conn = create_connection()
-    create_table(conn)
-    with dpg.window(label="Registration", width=400, height=250, id="reg_window"):
+
+
+conn = create_connection()
+create_table(conn)
+dpg.create_context()
+dpg.create_viewport(title='Bank System', width=1280, height=720)
+with dpg.window(label="Registration", width=400, height=250, id="reg_window"):
         dpg.add_input_text(label="Username", source="reg_username_input")
         dpg.add_input_text(label="Password", source="reg_password_input", password=True)
         dpg.add_input_text(label="Confirm Password", source="reg_confirm_password_input", password=True)
         dpg.add_button(label="Register", callback=lambda s, a: register_callback(s, a, conn))
         dpg.add_text(default_value="", source="reg_status")
         dpg.add_button(label="Go to Login", callback=lambda s, a: (dpg.hide_item("reg_window"), dpg.show_item("login_window")))
-    with dpg.window(label="Login", width=400, height=200, id="login_window", show=False):
+with dpg.window(label="Login", width=400, height=200, id="login_window", show=False):
         dpg.add_input_text(label="Username", source="login_username_input")
         dpg.add_input_text(label="Password", source="login_password_input", password=True)
         dpg.add_button(label="Login", callback=lambda s, a: login_callback(s, a, conn))
         dpg.add_text(default_value="", source="login_status")
         dpg.add_button(label="Go to Register", callback=lambda s, a: (dpg.hide_item("login_window"), dpg.show_item("reg_window")))
-    with dpg.window(label="Bank System", width=400, height=300, id="banking_window", show=False):
+with dpg.window(label="Bank System", width=400, height=300, id="banking_window", show=False):
         dpg.add_input_float(label="Deposit amount", source="deposit_input")
         dpg.add_button(label="Deposit", callback=lambda s, a: deposit_callback(s, a, conn))
         dpg.add_text(default_value="", source="deposit_status")
@@ -130,8 +133,9 @@ def main():
         dpg.add_text(default_value="", source="withdraw_status")
         dpg.add_separator()
         dpg.add_button(label="Logout", callback=logout_callback)
-        dpg.add_hidden_value("user_id")
-    dpg.start_dearpygui()
+        #dpg.add_hidden_value("user_id")
 
-if __name__ == '__main__':
-    main()
+dpg.setup_dearpygui()
+dpg.show_viewport()
+dpg.start_dearpygui()
+dpg.destroy_context()
